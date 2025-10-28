@@ -31,7 +31,12 @@ def main():
                 d = page.get_text("dict", sort=False)
                 for block in d['blocks']:
                     for line in block['lines']:
+                        
                         x = line['spans'][0]['bbox'][0]
+                        y = line['spans'][0]['bbox'][1]
+                        
+                        if y > 730: continue #skip page number lines
+                        
                         text = ''
                         for span in line['spans']:
                             text = text + span['text']
@@ -52,9 +57,7 @@ def main():
             indented = True
         
         if not indented:
-            if (is_line_page_num(line)):
-                type = "page_n"
-            elif (is_line_soul(line)):
+            if (is_line_soul(line)):
                 type = "soul"
                 parent_type = type
             elif (is_line_job(line)):
@@ -100,7 +103,7 @@ def main():
                 elif last_type == 'lb':
                     type = 'lb info 1'
                 elif last_type == 'lb info 1':
-                    type = 'lb info 2'
+                    type = 'lb info 2' # TODO not every Lb has two lines; use italics or keywords to tell
                 elif last_type == "ability":
                     type = "ab info"
                 elif is_line_ab_part(line) and not indented:
@@ -127,10 +130,8 @@ def main():
             if is_line_reminder(line) or last_type == 'reminder':
                 type = 'reminder'
         
-        # page number footers should not affect flow
-        if type != 'page_n':
-            last_type = type
-            last_indented = indented
+        last_type = type
+        last_indented = indented
         line_context = (parent_type, type, line)
         line_contexts.append(line_context)
         print(line_context)
@@ -138,7 +139,6 @@ def main():
 # TODO start using this enum instead of strings
 
 class LineType(Enum):
-    PAGE_N      = 0
     SOUL        = 1
     JOB         = 2
     KEYWORD     = 3
@@ -157,15 +157,6 @@ class LineType(Enum):
     AB_RULES    = 805    
     GLUE        = 999
     REMINDER    = 1000    
-
-def is_line_page_num(line):
-    m = re.match('Page\\W+of\\W+\\d*\\W+\\d*', line)
-    if m is not None: return True
-    
-    m = re.match('Page\\W+\\d*\\W+of\\W+\\d*', line)
-    if m is not None: return True
-    
-    return False
 
 def is_line_soul(line):
     m = re.match('\\w+ SOUL', line)
