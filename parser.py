@@ -1,3 +1,4 @@
+# parser.py
 import pymupdf
 import re
 from enum import Enum
@@ -12,7 +13,12 @@ problems:
 """
 
 def main():
-    in_path = "icon2.pdf"
+    data = parse_data()
+    for line_data in data:
+        print(line_data)
+    
+def parse_data():
+    DATA_PATH = "icon2.pdf"
     
     #inclusive ranges of PRINTED PAGES for each class/color
     page_ranges = [
@@ -25,7 +31,7 @@ def main():
     lines = []
 
     # extract and format lines
-    with pymupdf.open(in_path) as doc:
+    with pymupdf.open(DATA_PATH) as doc:
         for s in page_ranges:
             for page in doc[s]:
                 d = page.get_text("dict", sort=False)
@@ -43,7 +49,7 @@ def main():
                         lines.append((x, text))
     
     line_contexts = []       
-    parent_type = None
+    context_type = None
     last_type = None
     last_indented = False
     
@@ -58,90 +64,89 @@ def main():
         
         if not indented:
             if (is_line_soul(line)):
-                type = "soul"
-                parent_type = type
+                type = LineType.SOUL
+                context_type = type
             elif (is_line_job(line)):
-                type = "job"
-                parent_type = type
+                type = LineType.JOB
+                context_type = type
             elif (is_line_ability(line)):
-                type="ability"
-                parent_type="ability"
+                type = LineType.ABILITY
+                context_type = LineType.ABILITY
             elif is_line_keyword(line):
-                type = "keyword"
-                parent_type="keyword"
+                type = LineType.KEYWORD
+                context_type = LineType.KEYWORD
             elif is_line_lb(line):
-                type = "glue"
-                parent_type= 'lb'
+                type = LineType.GLUE
+                context_type = LineType.LB
             elif is_line_talents(line):
-                type='glue'
-                parent_type = 'talent'
+                type = LineType.GLUE
+                context_type = LineType.TALENT
         
         if type is None:
-            if parent_type == "soul":
-                type = "flavor"
-            elif parent_type == "job":
+            if context_type == LineType.SOUL:
+                type = LineType.FLAVOR
+            elif context_type == LineType.JOB:
                 if is_line_all_caps(line):
-                    type = "trait"
-                    parent_type = type
+                    type = LineType.TRAIT
+                    context_type = type
                 else:
-                    type = "flavor"
-            elif parent_type == "trait":
-                type = "trait rules"
-            elif parent_type == 'keyword':
+                    type = LineType.FLAVOR
+            elif context_type == LineType.TRAIT:
+                type = LineType.TRAIT_RULES
+            elif context_type == LineType.KEYWORD:
                 if is_line_glue(line):
-                    type = "glue"
+                    type = LineType.GLUE
                 else:
-                    type = "keyword rules"
-            elif parent_type == 'talent':
+                    type = LineType.KW_RULES
+            elif context_type == LineType.TALENT:
                 if is_line_all_caps(line):
-                    type = 'talent'
+                    type = LineType.TALENT
                 else:
-                    type = 'talent rules'
-            elif parent_type == "ability" or "ab part" or "lb":
+                    type = LineType.TALENT_RULES
+            elif context_type == LineType.ABILITY or LineType.AB_PART or LineType.LB:
                 if is_line_all_caps(line):
-                    type = 'lb'
-                elif last_type == 'lb':
-                    type = 'lb info 1'
-                elif last_type == 'lb info 1':
-                    type = 'lb info 2' # TODO not every Lb has two lines; use italics or keywords to tell
-                elif last_type == "ability":
-                    type = "ab info"
+                    type = LineType.LB
+                elif last_type == LineType.LB:
+                    type = LineType.LB_INFO1
+                elif last_type == LineType.LB_INFO1:
+                    type = LineType.LB_INFO2 # TODO not every Lb has two lines; use italics or keywords to tell
+                elif last_type == LineType.ABILITY:
+                    type = LineType.AB_INFO
                 elif is_line_ab_part(line) and not indented:
-                    type = "ab part"
-                    parent_type = "ab part"
+                    type = LineType.AB_PART
+                    context_type = LineType.AB_PART
                 else:
-                    if parent_type == "ability" or parent_type== 'lb':
-                        type = "flavor"
-                    elif parent_type == "ab part":
+                    if context_type == LineType.ABILITY or context_type == LineType.LB:
+                        type = LineType.FLAVOR
+                    elif context_type == LineType.AB_PART:
                         if indented:
                             if not last_indented:
-                                type = 'sab item' #sub ability item
-                            elif last_type == 'sab item':
-                                type = 'sab info'
+                                type = LineType.SUB_ABILITY
+                            elif last_type == LineType.SUB_ABILITY:
+                                type = LineType.SAB_INFO
                             elif is_line_ab_part(line):
-                                type = 'sab part'
+                                type = LineType.SAB_PART
                             else:
-                                type = 'sab_rules'
+                                type = LineType.SAB_RULES
                         elif is_line_glue(line):
-                            type = "glue"
+                            type = LineType.GLUE
                         else:
-                            type = "ab rules"
-        if type == "ab rules" or type == "sab rules":
-            if is_line_reminder(line) or last_type == 'reminder':
-                type = 'reminder'
+                            type = LineType.AB_RULES
+        if type == LineType.AB_RULES or type == LineType.SAB_RULES:
+            if is_line_reminder(line) or last_type == LineType.REMINDER:
+                type = LineType.REMINDER
         
         last_type = type
         last_indented = indented
-        line_context = (parent_type, type, line)
+        line_context = (context_type, type, line)
         line_contexts.append(line_context)
-        print(line_context)
-
-# TODO start using this enum instead of strings
+    return line_contexts
 
 class LineType(Enum):
     SOUL        = 1
     JOB         = 2
     KEYWORD     = 3
+    KW_RULES    = 305
     LB          = 4
     LB_INFO1    = 401
     LB_INFO2    = 402
@@ -154,7 +159,11 @@ class LineType(Enum):
     ABILITY     = 8
     AB_PART     = 802
     AB_INFO     = 801
-    AB_RULES    = 805    
+    AB_RULES    = 805
+    SUB_ABILITY = 9
+    SAB_INFO    = 901
+    SAB_PART    = 902
+    SAB_RULES   = 905
     GLUE        = 999
     REMINDER    = 1000    
 
@@ -243,7 +252,7 @@ def is_line_ab_part(line):
         return True
     # if the key is not in there exactly, try the first word (for cases like "sacrifice 3 or gain reckless:")
     else:
-        return (key.split(' ')[0] in ab_part_phrases)
+        return (key.strip().split(' ')[0] in ab_part_phrases)
 
 if __name__ == "__main__":
 	main()
