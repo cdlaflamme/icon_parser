@@ -128,6 +128,9 @@ def get_lines(in_path):
             elif is_line_keyword(line):
                 type = LineType.KEYWORD
                 context_type = LineType.KEYWORD
+            elif is_line_trait(line):
+                type = LineType.GLUE
+                context_type = LineType.TRAIT
             elif is_line_lb(line):
                 type = LineType.GLUE
                 context_type = LineType.LB
@@ -145,7 +148,7 @@ def get_lines(in_path):
                 else:
                     type = LineType.FLAVOR
             elif context_type == LineType.TRAIT:
-                type = LineType.TRAIT_RULES
+                type = LineType.TRAIT if last_type == LineType.GLUE else LineType.TRAIT_RULES
             elif context_type == LineType.KEYWORD:
                 if is_line_glue(line):
                     type = LineType.GLUE
@@ -354,6 +357,10 @@ def is_line_ability(line):
 
 def is_line_keyword(line):
     m = re.match('keyword\\W*', line.lower())
+    return m is not None
+
+def is_line_trait(line):
+    m = re.match('trait:{0,1}$', line.lower().strip())
     return m is not None
 
 def is_line_lb(line):

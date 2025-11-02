@@ -40,13 +40,13 @@ def main():
             # Keyword
             kw = job.getDescendantOfType(LineType.KEYWORD)
             kw_text = kw.children[0].text
-            kw_m = re.match('(\\w+):', kw_text)
+            kw_m = re.match('([ \\w]+):', kw_text)
             if kw_m:
                 kw_name = kw_m[1]
             
             body.append(odf.Paragraph('Keyword', style='Simple Header'))
             p = odf.Paragraph(kw_text)
-            if kw_m: p.set_span('Bold', regex = kw_name)
+            if kw_m: p.set_span('Bold', regex = '^'+kw_name)
             body.append(p)
             
             # cards for job abilities
