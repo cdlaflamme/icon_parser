@@ -28,11 +28,13 @@ def main():
         for job in jobs:
             # card 1: job name, keyword, trait, limit break
             # - consider flavor on the back...
+            
             # Job Name
             j_class = Styler.get_job_class_for_soul(job.soul).value
             p = odf.Paragraph(job.text, style = j_class + ' Job')
             body.append(p)
             
+            # Soul
             p = odf.Paragraph(soul.text.title())
             p.set_span('Italics', regex = '.*')
             body.append(p)
@@ -48,6 +50,18 @@ def main():
             p = odf.Paragraph(kw_text)
             if kw_m: p.set_span('Bold', regex = '^'+kw_name)
             body.append(p)
+            
+            # Trait
+            t = job.getDescendantOfType(LineType.TRAIT)
+            t_name = t.text.title()
+            t_rules = t.children[0].text
+            body.append(odf.Paragraph('Trait', style='Simple Header'))
+            p = odf.Paragraph(t_name + ': ' + t_rules)
+            p.set_span('Bold', regex = '^'+t_name)
+            body.append(p)
+            
+            
+            # Limit Break
             
             # cards for job abilities
             

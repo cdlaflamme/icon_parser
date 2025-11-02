@@ -93,6 +93,9 @@ def get_lines(in_path):
                         text = ''
                         for span in line['spans']:
                             text = text + span['text']
+                            
+                        if text.strip() == '': continue # skip empty lines
+                        
                         lines.append((x, text))
     
     line_contexts = []       
@@ -122,6 +125,9 @@ def get_lines(in_path):
             elif (is_line_job(line)):
                 type = LineType.JOB
                 context_type = type
+            elif is_line_abilities_header(line):
+                type = LineType.GLUE
+                context_type = LineType.ABILITY
             elif (is_line_ability(line)):
                 type = LineType.ABILITY
                 context_type = LineType.ABILITY
@@ -142,6 +148,7 @@ def get_lines(in_path):
             if context_type == LineType.SOUL:
                 type = LineType.FLAVOR
             elif context_type == LineType.JOB:
+                # Check for an unlebelled trait. necessary because of tactician (at least)
                 if is_line_all_caps(line):
                     type = LineType.TRAIT
                     context_type = type
@@ -152,9 +159,6 @@ def get_lines(in_path):
             elif context_type == LineType.KEYWORD:
                 if is_line_glue(line):
                     type = LineType.GLUE
-                elif is_line_all_caps(line):
-                    type = LineType.TRAIT
-                    context_type = type
                 else:
                     type = LineType.KW_RULES
             elif context_type == LineType.TALENT:
@@ -203,6 +207,7 @@ def get_lines(in_path):
         in_bullets = bulleted or (in_bullets and indented)
         line_context = (context_type, type, line)
         line_contexts.append(line_context)
+                
     return line_contexts
 
 class LineType(Enum):
@@ -259,7 +264,8 @@ class Block:
     
     def finalizeText(self):
         # trim newlines at the end
-        self.text = re.sub('\\n$', '', self.text)
+        #self.text = re.sub('\\n$', '', self.text)
+        self.text = self.text.strip()
     
     # Searches up the chain for an ancestor of supplied type
     def getAncestorOfType(self, type):
@@ -348,9 +354,13 @@ def is_line_job(line):
     return m is not None
     
 def is_line_all_caps(line):
-    m = re.match('^[A-Z\\W]+$', line)
+    m = re.match('^[A-Z\\W]+$', line.strip())
     return m is not None
-    
+
+def is_line_abilities_header(line):
+    m = re.match('abilities:{0,1}$', line.lower().strip())
+    return m is not None
+
 def is_line_ability(line):
     m = re.match('[IV]+\\. [A-Z\\W]+', line)
     return m is not None
