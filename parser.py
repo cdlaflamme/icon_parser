@@ -354,7 +354,7 @@ def is_line_job(line):
     return m is not None
     
 def is_line_all_caps(line):
-    m = re.match('^[A-Z\\W]+$', line.strip())
+    m = re.match('^[A-Z ]+$', line.strip())
     return m is not None
 
 def is_line_abilities_header(line):

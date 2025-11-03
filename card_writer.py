@@ -19,6 +19,9 @@ def main():
     body = doc.body
     body.clear()
     
+    # TODO make better use of this; created halfway thru implementation
+    writer = BlockWriter(body)
+    
     # every parent block is (nominally) a soul!
     for soul in blocks:
         
@@ -76,76 +79,112 @@ def main():
             info_text = info_text.strip().title()
             body.append(odf.Paragraph(info_text))
             
-            # Assemble ability parts
-            parts = lb.getAllDescendantsOfType(LineType.LB_PART)
-            
-            # TODO some ability parts are not getting properly recognized; bundled in with line breaks and not bolded
+            # Write lb parts
+            # TODO some ability parts are not getting properly bolded; blame line breaks
             # TODO paradiso is cut off
-            ab_part_key_regex = '([\\w\\W]+?) {0,1}[d\\d]*(?:\\[x\\]){0,1}[:\\.] .+'
-            for part in parts:
-                text = part.text
-                rules = part.getDescendantOfType(LineType.LB_RULES)
+            parts = lb.getAllDescendantsOfType(LineType.LB_PART)
+            writer.writeLbParts(parts, j_class)
+            
+            # Cards for job abilities
+            abilities = job.getAllDescendantsOfType(LineType.ABILITY)
+            for ab in abilities:
+                # Title
+                body.append(odf.Paragraph(ab.text.upper(), style = j_class + ' Ability'))
                 
-                if rules: text = text + ' ' + rules.text
-                p = odf.Paragraph(text.strip())
-                
-                # Identify part key
-                m = re.match(ab_part_key_regex, part.text.lower())
-                key = m[1]
-                
-                # Bold ability part key
-                p.set_span('Bold', regex = '(?i)^'+key)
+                # Job tag
+                j_name = re.match('\\d+\\. ([A-Z ]+)', job.text)[1]
+                p = odf.Paragraph(j_name.title() + ' Ability')
+                p.set_span('Italics', regex = '.*')
                 body.append(p)
                 
-                # Render sub-items of this ability part after all part & rules text
-                sub_lb = part.getDescendantOfType(LineType.SUB_LB)
-                if sub_lb:
-                    sub_name = sub_lb.text
-                    body.append(odf.Paragraph(sub_lb.text.strip().title(), style = j_class + ' Sub-item'))
-                    
-                    sub_info = sub_lb.getDescendantOfType(LineType.SLB_INFO)
-                    if sub_info: body.append(odf.Paragraph('\t' + sub_info.text.strip()))
-                    
-                    sub_parts   = sub_lb.getAllDescendantsOfType(LineType.SLB_PART)
-                    for sub_part in sub_parts:
-                        text = sub_part.text
-                        sub_rules   = sub_part.getDescendantOfType(LineType.SLB_RULES)
-                        if sub_rules: text = text + ' ' + sub_rules.text
-                        
-                        p = odf.Paragraph(text.strip(), style = 'Sub-item')
-                        
-                        # Identify part key
-                        m = re.match(ab_part_key_regex, sub_part.text.lower())
-                        key = m[1]
-                        
-                        # Bold ability part key
-                        p.set_span('Bold Sub-item', regex = '(?i)^'+key)
-                        body.append(p)
-                        
-            
-            # cards for job abilities
-            
-            # cards for job talents
-             # TODO create talent style
+                # Info line(s)
+                info = job.getDescendantOfType(LineType.AB_INFO)
+                info_text = info.text.strip().title()
+                body.append(odf.Paragraph(info_text))
+                
+                # Write parts
+                parts = ab.getAllDescendantsOfType(LineType.AB_PART)
+                writer.writeAbilityParts(parts, j_class)
+                
+            # Cards for job talents
+            talents = job.getAllDescendantsOfType(LineType.TALENT)
+            for t in talents:
+                t_name = t.text
+                body.append(odf.Paragraph(t_name, style = j_class + ' Talent'))
+                
+                p = odf.Paragraph(j_name.title() + ' Talent')
+                p.set_span('Italics', regex = '.*')
+                body.append(p)
+                
+                t_rules = t.getDescendantOfType(LineType.TALENT_RULES)
+                body.append(odf.Paragraph(t_rules.text))
         
-        
-        # BELOW: OUTDATED
-        """
-        style = Styler.get_style(block.type)
-        block.style = style
-        
-        p = odf.Paragraph(block.text, style = block.style)
-        
-        # Add page/colum break if starting new job/ability
-        if block.type in [LineType.ABILITY]:
-            #body.append(odf.ColumnBreak())
-            pass
-        elif block.type in [LineType.JOB]:
-            body.append(odf.PageBreak())
-        body.append(p)
-        """
     # Wowee
     doc_utils.save_doc(doc, 'icon_cards.odt')
+
+class BlockWriter:
+    
+    ab_part_key_regex = '([\\w\\W]+?) {0,1}[d\\d]*(?:\\[x\\]){0,1}[:\\.] .+'
+
+
+    def __init__(self, body):
+        self.doc_body = body
+    
+    def writeAbilityParts(self, parts, j_class):
+        self.writeParts(parts, LineType.AB_PART, j_class)
+    
+    def writeLbParts(self, parts, j_class):
+        self.writeParts(parts, LineType.LB_PART, j_class)
+    
+    def writeParts(self, parts, type, j_class):
+        for part in parts:
+            part_type = type
+            rules_type = {LineType.LB_PART: LineType.LB_RULES, LineType.AB_PART: LineType.AB_RULES}[type]
+            s_item_type = {LineType.LB_PART: LineType.SUB_LB, LineType.AB_PART: LineType.SUB_ABILITY}[type]
+            s_part_type = {LineType.LB_PART: LineType.SLB_PART, LineType.AB_PART: LineType.SAB_PART}[type]
+            s_rules_type = {LineType.LB_PART: LineType.SLB_RULES, LineType.AB_PART: LineType.SAB_RULES}[type]
+            s_info_type = {LineType.LB_PART: LineType.SLB_INFO, LineType.AB_PART: LineType.SAB_INFO}[type]
+            
+            
+            text = part.text
+            rules = part.getDescendantOfType(rules_type)
+            
+            if rules: text = text + ' ' + rules.text
+            p = odf.Paragraph(text.strip())
+            
+            # Identify part key
+            m = re.match(BlockWriter.ab_part_key_regex, part.text.lower())
+            key = m[1]
+            
+            # Bold ability part key
+            p.set_span('Bold', regex = '(?i)^'+key)
+            self.doc_body.append(p)
+            
+            # Render sub-items of this ability part after all part & rules text
+            sub_item = part.getDescendantOfType(s_item_type)
+            if sub_item:
+                sub_name = sub_item.text
+                self.doc_body.append(odf.Paragraph(sub_name.strip().title(), style = j_class + ' Sub-item'))
+                
+                sub_info = sub_item.getDescendantOfType(s_info_type)
+                if sub_info:
+                    self.doc_body.append(odf.Paragraph(sub_info.text.strip(), style = 'Sub-item'))
+                
+                sub_parts   = sub_item.getAllDescendantsOfType(s_part_type)
+                for sub_part in sub_parts:
+                    text = sub_part.text
+                    sub_rules   = sub_part.getDescendantOfType(s_rules_type)
+                    if sub_rules: text = text + ' ' + sub_rules.text
+                    
+                    p = odf.Paragraph(text.strip(), style = 'Sub-item')
+                    
+                    # Identify part key
+                    m = re.match(BlockWriter.ab_part_key_regex, sub_part.text.lower())
+                    key = m[1]
+                    
+                    # Bold ability part key
+                    p.set_span('Bold Sub-item', regex = '(?i)^'+key)
+                    self.doc_body.append(p)
 
 class JobClass(Enum):
     STALWART    = 'Stalwart'
