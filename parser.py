@@ -168,7 +168,7 @@ def get_lines(in_path):
                     type = LineType.TALENT_RULES
             elif context_type in [LineType.ABILITY, LineType.AB_PART, LineType.LB_PART, LineType.LB, LineType.SUB_ABILITY, LineType.SUB_LB]:
                 is_lb_context = context_type in [LineType.LB_PART, LineType.LB, LineType.SUB_LB]
-                if is_line_all_caps(line) and last_type == LineType.GLUE and context_type == LineType.LB:
+                if is_line_all_caps(line) and last_type in [LineType.GLUE, LineType.LB] and context_type == LineType.LB:
                     type = LineType.LB
                 elif last_type == LineType.LB and is_info:
                     type = LineType.LB_INFO1
@@ -471,6 +471,7 @@ info_phrases = [
     'mark',
     'summon',
     'swap',
+    'object',
     
     'range',
     'melee',
@@ -500,6 +501,7 @@ info_phrases = [
     'die',
     'immobile',
     'size',
+    'height',
     
     'true',
     'strike'
