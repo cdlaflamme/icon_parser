@@ -513,6 +513,7 @@ info_phrases = [
     'ally',
     'foe',
     'self',
+    'character',
     
     'end',
     'turn',

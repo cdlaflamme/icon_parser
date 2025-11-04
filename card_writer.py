@@ -125,7 +125,7 @@ def main():
                 body.append(p)
                 
                 # Info line(s)
-                info = job.getDescendantOfType(LineType.AB_INFO)
+                info = ab.getDescendantOfType(LineType.AB_INFO)
                 info_text = info.text.strip().title()
                 body.append(odf.Paragraph(info_text))
                 
