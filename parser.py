@@ -387,7 +387,7 @@ def is_line_reminder(line):
 
 def is_line_glue(line):
     lower_line = line.lower()
-    m = re.match('abilities\W*', lower_line)
+    m = re.match('abilities\W*$', lower_line)
     if m: return True
     
     m = re.match('master:{0,1} *$', lower_line)

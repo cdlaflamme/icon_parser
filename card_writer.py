@@ -81,7 +81,6 @@ def main():
             
             # Write lb parts
             # TODO some ability parts are not getting properly bolded; blame line breaks
-            # TODO paradiso is cut off
             parts = lb.getAllDescendantsOfType(LineType.LB_PART)
             writer.writeLbParts(parts, j_class)
             
@@ -147,9 +146,14 @@ class BlockWriter:
             
             
             text = part.text
-            rules = part.getDescendantOfType(rules_type)
+            rules = part.getAllDescendantsOfType(rules_type)
             
-            if rules: text = text + ' ' + rules.text
+            rules_text = ''
+            if rules:
+                for rule in rules:
+                    rules_text = rules_text + ' ' + rule.text
+            
+            if rules_text: text = text + ' ' + rules_text
             p = odf.Paragraph(text.strip())
             
             # Identify part key
@@ -173,9 +177,10 @@ class BlockWriter:
                 sub_parts   = sub_item.getAllDescendantsOfType(s_part_type)
                 for sub_part in sub_parts:
                     text = sub_part.text
-                    sub_rules   = sub_part.getDescendantOfType(s_rules_type)
-                    if sub_rules: text = text + ' ' + sub_rules.text
-                    
+                    sub_rules   = sub_part.getAllDescendantsOfType(s_rules_type)
+                    if sub_rules:
+                        for rule in sub_rules:
+                            text = text + ' ' + rule.text
                     p = odf.Paragraph(text.strip(), style = 'Sub-item')
                     
                     # Identify part key
