@@ -83,7 +83,7 @@ def main():
                     if sub_rules:
                         for rule in sub_rules:
                             text = text + ' ' + rule.text
-                    p = odf.Paragraph(re.sub(' +', ' ', text.strip()), style = 'Sub-item')
+                    p = odf.Paragraph(Styler.fix_spaces(text.strip()), style = 'Sub-item')
                     
                     # Identify part key
                     m = re.match(BlockWriter.ab_part_key_regex, sub_part.text.lower())
@@ -197,7 +197,7 @@ class BlockWriter:
                     rules_text = rules_text + ' ' + rule.text
             
             if rules_text: text = text + ' ' + rules_text
-            p = odf.Paragraph(re.sub(' +', ' ', text.strip()))
+            p = odf.Paragraph(Styler.fix_spaces(text.strip()))
             
             # Identify part key
             m = re.match(BlockWriter.ab_part_key_regex, part.text.lower())
@@ -224,7 +224,7 @@ class BlockWriter:
                     if sub_rules:
                         for rule in sub_rules:
                             text = text + ' ' + rule.text
-                    p = odf.Paragraph(re.sub(' +', ' ', text.strip()), style = 'Sub-item')
+                    p = odf.Paragraph(Styler.fix_spaces(text.strip()), style = 'Sub-item')
                     
                     # Identify part key
                     m = re.match(BlockWriter.ab_part_key_regex, sub_part.text.lower())
@@ -256,6 +256,12 @@ class Styler:
     def get_job_class_for_soul(soul):
         return Styler.SOUL_CLASS_DICT[soul]
     
+    # Hack; theoretically not necessary but need quicker turnaround
+    def fix_spaces(str):
+        str = re.sub(' +', ' ', str)
+        # TODO does not work lol
+        str = re.sub('(?m)\\n +', '\\n', str)
+        return str
     
     SOUL_CLASS_DICT = {
         'KNIGHT'    : JobClass.STALWART,
