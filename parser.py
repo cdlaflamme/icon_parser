@@ -383,8 +383,15 @@ def is_line_abilities_header(line):
     return m is not None
 
 def is_line_ability(line):
-    m = re.match('[IV]+\\. [A-Z\\W]+', line)
-    return m is not None
+    # Add hacks for Ätherwand and war god's step
+    m = re.match('[IV]+\\. [ÄA-Z\\W]+', line)
+    if m: return True
+    
+    m = re.match('WAR GOD\'S STEP', line)
+    if m: return True
+    
+    return False
+
 
 def is_line_keyword(line):
     m = re.match('keyword\\W*', line.lower())
