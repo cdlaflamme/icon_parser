@@ -155,7 +155,20 @@ def get_lines(in_path):
                 else:
                     type = LineType.FLAVOR
             elif context_type == LineType.TRAIT:
-                type = LineType.TRAIT if last_type == LineType.GLUE else LineType.TRAIT_RULES
+                if last_type == LineType.GLUE:
+                    type = LineType.TRAIT
+                elif indented and not last_indented:
+                    type = LineType.SUB_TRAIT
+                    context_type = type
+                else:
+                    type = LineType.TRAIT_RULES
+            elif context_type == LineType.SUB_TRAIT and indented:
+                if is_line_info(line):
+                    type = LineType.ST_INFO
+                elif is_line_ab_part(line):
+                    type = LineType.ST_PART
+                else:
+                    type = LineType.ST_RULES
             elif context_type == LineType.KEYWORD:
                 if is_line_glue(line):
                     type = LineType.GLUE
@@ -229,6 +242,10 @@ class LineType(Enum):
     FLAVOR      = 6
     TRAIT       = 7
     TRAIT_RULES = 705
+    SUB_TRAIT   = 710
+    ST_INFO     = 711
+    ST_PART     = 712
+    ST_RULES    = 715
     ABILITY     = 8
     AB_INFO     = 801
     AB_PART     = 802
@@ -330,6 +347,10 @@ class Block:
         LineType.FLAVOR      : 1,
         LineType.TRAIT       : LineType.JOB,
         LineType.TRAIT_RULES : LineType.TRAIT,
+        LineType.SUB_TRAIT   : LineType.TRAIT,
+        LineType.ST_INFO     : LineType.SUB_TRAIT,
+        LineType.ST_PART     : LineType.SUB_TRAIT,
+        LineType.ST_RULES    : LineType.ST_PART,
         LineType.ABILITY     : LineType.JOB,
         LineType.AB_INFO     : LineType.ABILITY,
         LineType.AB_PART     : LineType.ABILITY,

@@ -34,6 +34,7 @@ def main():
             
             # Job Name
             j_class = Styler.get_job_class_for_soul(job.soul).value
+            j_name = re.match('\\d+\\. ([A-Z ]+)', job.text)[1] # used later
             p = odf.Paragraph(job.text, style = j_class + ' Job')
             body.append(p)
             
@@ -63,8 +64,35 @@ def main():
             p.set_span('Bold', regex = '^'+t_name)
             body.append(p)
             
-            # TODO sub trait parts like shrine, puppet and beast
+            sub_item = t.getDescendantOfType(LineType.SUB_TRAIT)
             
+            if sub_item:
+                # Print sub item name and info
+                # Name
+                body.append(odf.Paragraph(sub_item.text.title(), style = j_class + ' Sub-item'))
+                
+                # Info line(s)
+                info = sub_item.getDescendantOfType(LineType.ST_INFO)
+                body.append(odf.Paragraph(info.text.strip().title(), style = 'Sub-item'))
+                
+                # Print sub parts
+                sub_parts = sub_item.getAllDescendantsOfType(LineType.ST_PART)
+                for sub_part in sub_parts:
+                    text = sub_part.text
+                    sub_rules   = sub_part.getAllDescendantsOfType(LineType.ST_RULES)
+                    if sub_rules:
+                        for rule in sub_rules:
+                            text = text + ' ' + rule.text
+                    p = odf.Paragraph(re.sub(' +', ' ', text.strip()), style = 'Sub-item')
+                    
+                    # Identify part key
+                    m = re.match(BlockWriter.ab_part_key_regex, sub_part.text.lower())
+                    key = m[1]
+                    
+                    # Bold ability part key
+                    p.set_span('Bold Sub-item', regex = '(?i)^'+key)
+                    body.append(p)
+                        
             # Limit Break
             lb = job.getDescendantOfType(LineType.LB)
             # Title
@@ -81,6 +109,7 @@ def main():
             
             # Write lb parts
             # TODO some ability parts are not getting properly bolded; blame line breaks
+            # TODO Colossus is missing an ability
             parts = lb.getAllDescendantsOfType(LineType.LB_PART)
             writer.writeLbParts(parts, j_class)
             
@@ -91,7 +120,6 @@ def main():
                 body.append(odf.Paragraph(ab.text.upper(), style = j_class + ' Ability'))
                 
                 # Job tag
-                j_name = re.match('\\d+\\. ([A-Z ]+)', job.text)[1]
                 p = odf.Paragraph(j_name.title() + ' Ability')
                 p.set_span('Italics', regex = '.*')
                 body.append(p)
@@ -138,11 +166,26 @@ class BlockWriter:
     def writeParts(self, parts, type, j_class):
         for part in parts:
             part_type = type
-            rules_type = {LineType.LB_PART: LineType.LB_RULES, LineType.AB_PART: LineType.AB_RULES}[type]
-            s_item_type = {LineType.LB_PART: LineType.SUB_LB, LineType.AB_PART: LineType.SUB_ABILITY}[type]
-            s_part_type = {LineType.LB_PART: LineType.SLB_PART, LineType.AB_PART: LineType.SAB_PART}[type]
-            s_rules_type = {LineType.LB_PART: LineType.SLB_RULES, LineType.AB_PART: LineType.SAB_RULES}[type]
-            s_info_type = {LineType.LB_PART: LineType.SLB_INFO, LineType.AB_PART: LineType.SAB_INFO}[type]
+            rules_type = {
+                LineType.LB_PART: LineType.LB_RULES,
+                LineType.AB_PART: LineType.AB_RULES,
+            }[type]
+            s_item_type = {
+                LineType.LB_PART: LineType.SUB_LB,
+                LineType.AB_PART: LineType.SUB_ABILITY
+            }[type]
+            s_part_type = {
+                LineType.LB_PART: LineType.SLB_PART,
+                LineType.AB_PART: LineType.SAB_PART
+            }[type]
+            s_rules_type = {
+                LineType.LB_PART: LineType.SLB_RULES,
+                LineType.AB_PART: LineType.SAB_RULES
+            }[type]
+            s_info_type = {
+                LineType.LB_PART: LineType.SLB_INFO,
+                LineType.AB_PART: LineType.SAB_INFO
+            }[type]
             
             
             text = part.text
