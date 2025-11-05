@@ -19,6 +19,11 @@ def main():
     body = doc.body
     body.clear()
     
+    talent_doc = odf.Document('odt')
+    t_body = talent_doc.body
+    t_body.clear()
+    doc_utils.get_talent_styles(talent_doc)
+    
     # TODO make better use of this; created halfway thru implementation
     writer = BlockWriter(body)
     
@@ -137,17 +142,19 @@ def main():
             talents = job.getAllDescendantsOfType(LineType.TALENT)
             for t in talents:
                 t_name = t.text
-                body.append(odf.Paragraph(t_name, style = j_class + ' Talent'))
+                t_body.append(odf.Paragraph(t_name, style = j_class + ' Talent'))
                 
                 p = odf.Paragraph(j_name.title() + ' Talent')
                 p.set_span('Italics', regex = '.*')
-                body.append(p)
+                t_body.append(p)
                 
                 t_rules = t.getDescendantOfType(LineType.TALENT_RULES)
-                body.append(odf.Paragraph(t_rules.text))
+                t_body.append(odf.Paragraph(t_rules.text))
         
     # Wowee
     doc_utils.save_doc(doc, 'icon_cards.odt')
+    talent_doc.save('talent_cards.odt', pretty=True)
+
 
 class BlockWriter:
     
