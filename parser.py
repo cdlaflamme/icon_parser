@@ -56,6 +56,7 @@ def get_blocks(data):
                 currentBlock.setParent(found_parent)
             else:
                 blocks.append(currentBlock)
+                
                 assert line_type == LineType.SOUL # :)
                 currentSoul = re.match('([A-Z]+)\\W+SOUL',line_text)[1]
                 currentBlock.soul = currentSoul
@@ -220,7 +221,7 @@ def get_lines(in_path):
         in_bullets = bulleted or (in_bullets and indented)
         line_context = (context_type, type, line)
         line_contexts.append(line_context)
-                
+        
     return line_contexts
 
 class LineType(Enum):
@@ -473,6 +474,12 @@ ab_part_phrases = [
     'aura',
     'summon action',
     'summon effect',
+    'object', # silly yaman (for LB)
+    'end', # so silly yaman (for peak performance)
+    'your',
+    'turn',
+    'and',
+    'gain',
 ]
 
 def is_line_ab_part(line):
