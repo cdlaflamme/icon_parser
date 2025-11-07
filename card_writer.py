@@ -64,7 +64,7 @@ def main():
             t = job.getDescendantOfType(LineType.TRAIT)
             t_name = t.text.title()
             t_rules = t.children[0].text
-            body.append(odf.Paragraph('Trait', style='Simple Header'))
+            body.append(odf.Paragraph('\nTrait', style='Simple Header'))
             p = odf.Paragraph(t_name.title() + ': ' + t_rules)
             p.set_span('Bold', regex = '^'+t_name)
             body.append(p)
